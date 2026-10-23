@@ -1,0 +1,17 @@
+name: weekly-operations-report
+objective: Reconcile weekly ticket work, create and review the workbook and deck, and prepare stakeholder communication.
+trigger:
+  type: schedule
+  timezone: Asia/Kolkata
+  expression: "0 16 * * 5"
+uses: [jira, microsoft]
+authority:
+  publish: ask
+  email_send: ask
+success:
+  - report totals reconcile to the configured ticket scope
+  - workbook and deck pass content and visual review
+  - communication uses the exact reviewed artifacts
+on_failure:
+  notify: operations_team
+  retry: 1

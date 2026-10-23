@@ -1,0 +1,9 @@
+# Python the agent sessions use: uv/uvx launches the MCP servers the Connectors page configures, and
+# the document skills build and check files with these libraries. Same set as the backend Dockerfile.
+uv
+python-docx~=1.1
+openpyxl~=3.1
+python-pptx~=1.0
+matplotlib~=3.9
+pypdf~=5.0
+PyYAML~=6.0

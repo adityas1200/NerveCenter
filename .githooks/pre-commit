@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+staged_paths=()
+while IFS= read -r -d '' path; do staged_paths+=("$path"); done < <(git diff --cached --name-only -z --diff-filter=ACMR)
+
+dedupe_paths() {
+  local -a unique=()
+  local candidate existing found
+  for candidate in "$@"; do
+    found=0
+    for existing in "${unique[@]}"; do
+      if [[ "$candidate" == "$existing" ]]; then found=1; break; fi
+    done
+    if ((found == 0)); then unique+=("$candidate"); fi
+  done
+  printf '%s\0' "${unique[@]}"
+}
+
+node frontend/scripts/ai-guardrails-check.mjs
+node --experimental-strip-types frontend/scripts/docs-update-check.mts --staged
+node --experimental-strip-types frontend/scripts/breakage-alert-check.mts --staged
+
+backend_source=()
+frontend_source=()
+frontend_lint_source=()
+backend_tests=()
+frontend_tests=()
+plugin_changed=false
+backend_api_changed=false
+backend_auth_changed=false
+backend_storage_changed=false
+backend_migration_changed=false
+frontend_api_or_tasks_changed=false
+
+for path in "${staged_paths[@]}"; do
+  case "$path" in
+    backend/src/*) backend_source+=("$path") ;;
+    frontend/src/*)
+      frontend_source+=("${path#frontend/}")
+      case "$path" in
+        *.js|*.jsx|*.ts|*.tsx|*.mts|*.mjs) frontend_lint_source+=("${path#frontend/}") ;;
+      esac
+      ;;
+    plugin/*) plugin_changed=true ;;
+  esac
+  case "$path" in
+    backend/tests/*.test.mjs) backend_tests+=("${path#backend/}") ;;
+    frontend/src/**/*.test.ts|frontend/src/**/*.test.tsx|frontend/src/**/*.spec.ts|frontend/src/**/*.spec.tsx)
+      frontend_tests+=("${path#frontend/}") ;;
+  esac
+  case "$path" in
+    backend/src/api/*) backend_api_changed=true ;;
+    backend/src/app/identity.*|backend/src/app/rbac*|backend/src/lib/router.*|backend/src/lib/auth*|backend/src/tasks/permission-policy.*|backend/src/tasks/agent-access.*|backend/src/projects/project-access.*) backend_auth_changed=true ;;
+    backend/src/storage/*|backend/src/*/*store.*|backend/src/*/*-store.*|backend/migrations/*) backend_storage_changed=true ;;
+    frontend/src/api/*|frontend/src/features/tasks/*) frontend_api_or_tasks_changed=true ;;
+  esac
+  case "$path" in backend/migrations/*) backend_migration_changed=true ;; esac
+done
+
+if ((${#backend_source[@]})); then
+  npm --prefix backend run typecheck
+fi
+
+if ((${#frontend_source[@]})); then
+  if ((${#frontend_lint_source[@]})); then
+    (cd frontend && ./node_modules/.bin/eslint --max-warnings=0 -- "${frontend_lint_source[@]}")
+  fi
+  npm --prefix frontend run typecheck
+fi
+
+if [[ "$plugin_changed" == true ]]; then
+  python3 plugin/operations-fleet/tools/validate_plugin.py
+fi
+
+if [[ "$backend_api_changed" == true ]]; then
+  backend_tests+=(tests/api.test.mjs tests/router.test.mjs tests/rbac-routes.test.mjs)
+fi
+if [[ "$backend_auth_changed" == true ]]; then
+  backend_tests+=(tests/rbac.test.mjs tests/rbac-routes.test.mjs tests/project-access.test.mjs tests/agent-access.test.mjs tests/permission-shell.test.mjs)
+fi
+if [[ "$backend_storage_changed" == true ]]; then
+  backend_tests+=(tests/bootstrap-postgres.test.mjs tests/projects-migration.test.mjs tests/rbac-postgres.test.mjs tests/ticket-signature-postgres.test.mjs)
+  if [[ "$backend_migration_changed" == true ]]; then
+    echo "Migration changes also require the full PostgreSQL integration suite before hand-over; bootstrap test is skipped unless NC_TEST_DATABASE_URL is set."
+  fi
+fi
+
+if ((${#backend_tests[@]})); then
+  unique_backend_tests=()
+  while IFS= read -r -d '' path; do unique_backend_tests+=("$path"); done < <(dedupe_paths "${backend_tests[@]}")
+  (cd backend && node --import tsx --import ./tests/test-environment.mjs --test --test-concurrency=1 "${unique_backend_tests[@]}")
+fi
+
+if [[ "$frontend_api_or_tasks_changed" == true ]]; then
+  frontend_tests+=(src/api/client.contract.test.ts src/api/tasks.alert.test.ts src/api/tasks.fileUrl.test.ts src/features/tasks/TasksPages.test.tsx)
+fi
+if ((${#frontend_tests[@]})); then
+  unique_frontend_tests=()
+  while IFS= read -r -d '' path; do unique_frontend_tests+=("$path"); done < <(dedupe_paths "${frontend_tests[@]}")
+  npm --prefix frontend run test:unit -- "${unique_frontend_tests[@]}"
+fi

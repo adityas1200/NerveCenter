@@ -1,0 +1,147 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "start"
+      ],
+      "cwd": "backend",
+      "port": 8787
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "cwd": "frontend",
+      "port": 5175
+    },
+    {
+      "name": "mockups",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8099"
+      ],
+      "cwd": "docs/mockup-v2",
+      "port": 8099
+    },
+    {
+      "name": "mockup-home",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8098"
+      ],
+      "cwd": "docs/mockup-home",
+      "port": 8098
+    },
+    {
+      "name": "mockup-task",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8097"
+      ],
+      "cwd": "docs/mockup-task",
+      "port": 8097
+    },
+    {
+      "name": "backend-verify",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=../.claude/verify-backend.env",
+        "src/main.mjs"
+      ],
+      "cwd": "backend",
+      "port": 8797
+    },
+    {
+      "name": "frontend-verify",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=../.claude/verify-frontend.env",
+        "./node_modules/vite/bin/vite.js",
+        "--port",
+        "5185",
+        "--strictPort"
+      ],
+      "cwd": "frontend",
+      "port": 5185
+    },
+    {
+      "name": "mock-platforms",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "local/mock-platforms/server.mjs"
+      ],
+      "port": 8714
+    },
+    {
+      "name": "frontend-review",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=../.claude/review-frontend.env",
+        "./node_modules/vite/bin/vite.js",
+        "--port",
+        "5186",
+        "--strictPort"
+      ],
+      "cwd": "frontend",
+      "port": 5186
+    },
+    {
+      "name": "frontend-iso",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=../.claude/isolated-frontend.env",
+        "./node_modules/vite/bin/vite.js",
+        "--port",
+        "5188",
+        "--strictPort"
+      ],
+      "cwd": "frontend",
+      "port": 5188
+    },
+    {
+      "name": "backend-isolated",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=../.claude/isolated-backend.env",
+        "src/main.mjs"
+      ],
+      "cwd": "backend",
+      "port": 8798
+    },
+    {
+      "name": "backend-sonic",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=../.claude/sonic-backend.env",
+        "src/main.mjs"
+      ],
+      "cwd": "backend",
+      "port": 8796
+    },
+    {
+      "name": "frontend-sonic",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--env-file=../.claude/sonic-frontend.env",
+        "./node_modules/vite/bin/vite.js",
+        "--port",
+        "5189",
+        "--strictPort"
+      ],
+      "cwd": "frontend",
+      "port": 5189
+    }
+  ]
+}

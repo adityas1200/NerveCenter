@@ -1,0 +1,141 @@
+# Operations workspace setup
+# Fill only the sections your team uses. Run the setup skill to complete this conversationally.
+
+team:
+  name: ""
+  timezone: ""
+  operator:
+    name: ""
+    email: ""
+
+# Delete this section when the team has no ticketing platform.
+ticketing:
+  platform: ""            # jira, servicenow, or another platform
+  connection: ""          # name under connections
+  scope:
+    site: ""
+    project: ""
+    queue: ""
+  views:
+    my_work: ""
+  fields:
+    category: ""
+    approval: ""
+    environment: ""
+  states:
+    new: []
+    active: []
+    review: []
+    done: []
+  conventions: |
+    Describe labels, issue types, SLAs, closure rules, and anything unusual.
+
+# Add one item for each operational platform the team supports.
+platforms: []
+# Example:
+# platforms:
+#   - name: analytics
+#     type: databricks
+#     connection: databricks
+#     environments:
+#       dev:
+#         workspace: ""
+#         writable: true
+#       prod:
+#         workspace: ""
+#         writable: false
+#     monitoring:
+#       jobs: ""
+#       data_quality: ""
+#     conventions: |
+#       Describe catalogs, schemas, result tables, owners, and deployment flow.
+
+identity:
+  platform: ""
+  connection: ""
+  entitlements: {}
+  conventions: |
+    Describe normal and privileged access, approval owners, expiry, and group ownership.
+
+source_control:
+  platform: ""
+  connection: ""
+  repository: ""
+  default_branch: ""
+  branch_pattern: ""
+  tests: []
+  pull_request:
+    reviewers: []
+    required_checks: []
+  deployments: {}
+
+# Optional look for reports and email. Leave out to use the host's defaults.
+# branding:
+#   name: ""
+#   accent: ""            # hex colour, for example "#2563EB"
+#   font: ""
+#   logo_url: ""
+#   footer: ""
+
+# Templates and publication destinations.
+documents:
+  connection: ""
+  templates: {}
+  destinations: {}
+
+communication:
+  platform: ""
+  connection: ""
+  notifications_enabled: false
+  sender: ""
+  internal_domains: []    # recipients in these domains count as internal
+  recipient_groups: {}
+  smtp:
+    host: ${SMTP_HOST}
+    port: ${SMTP_PORT:-25}
+    use_tls: ${SMTP_USE_TLS:-false}
+  conventions: |
+    Describe tone, signatures, approval, and external-recipient rules.
+
+knowledge:
+  mode: local             # local, mcp, or both
+  path: knowledge
+  connection: ""
+  collections: []
+  approved_only: true
+
+# Simple authority boundaries, each allow, ask, or deny. Provider permissions
+# still enforce actual access. Close tickets only after verified work.
+policy:
+  email_send: ask           # sending email
+  privileged_access: ask    # granting or revoking access
+  production_changes: ask   # job runs, repairs, non-SELECT SQL, git push
+  ticket_writes: ask        # creating, closing, or transitioning tickets
+  workspace_changes: ask    # operations.yaml, workflows, knowledge, skills
+  knowledge_drafts: allow   # lesson drafts a person reviews before they count
+  default_write: ask        # any other change
+
+# Connection names used by the sections above. Store only endpoints, commands,
+# and environment-variable references here. Never store secret values.
+connections: {}
+# Examples:
+# connections:
+#   jira:
+#     kind: mcp
+#     transport: http
+#     url: ${JIRA_MCP_URL}
+#   local-knowledge:
+#     kind: mcp
+#     transport: stdio
+#     command: python
+#     args: [../knowledge-server/server.py]
+#   github:
+#     kind: cli
+#     command: gh
+#   internal-api:
+#     kind: api
+#     base_url: ${INTERNAL_API_URL}
+#     auth: oauth
+
+# Human descriptions of common work. Formal reusable workflows live in workflows/.
+routines: []

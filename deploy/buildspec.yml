@@ -1,0 +1,34 @@
+version: 0.2
+# The one CI entry point for every NerveCenter environment. Point each CodeBuild project (or
+# CodePipeline stage) at deploy/buildspec.yml and set DEPLOY_PLATFORM on it:
+#
+#   DEPLOY_PLATFORM=aws         (default) EC2 + Docker Compose -> deploy/aws/
+#     AWS_DEPLOY_MODE=bundle    (default) zip, S3, atomic swap on the host -> deploy/aws/ci-deploy.sh
+#     AWS_DEPLOY_MODE=git       host runs git pull + compose            -> deploy/aws/ci-deploy-git.sh
+#   DEPLOY_PLATFORM=databricks  Databricks App (bundle)                 -> deploy/databricks/ci-deploy.sh
+#
+# The build image needs Node 22 (pinned below; use aws/codebuild/standard:7.0 or newer). Every build
+# runs the tests first (pre_build, deploy/ci-test.sh); RUN_TESTS=0 skips them. Both platforms build
+# the same frontend/, backend/ and plugin/ from the repository root; only the files under
+# deploy/<platform>/ differ. Per-platform variables are listed in each script.
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+  pre_build:
+    commands:
+      - bash deploy/ci-test.sh
+  build:
+    commands:
+      - |
+        case "${DEPLOY_PLATFORM:-aws}" in
+          aws)
+            case "${AWS_DEPLOY_MODE:-bundle}" in
+              bundle) bash deploy/aws/ci-deploy.sh ;;
+              git) bash deploy/aws/ci-deploy-git.sh ;;
+              *) echo "Unknown AWS_DEPLOY_MODE '${AWS_DEPLOY_MODE}' (expected bundle or git)"; exit 2 ;;
+            esac
+            ;;
+          databricks) bash deploy/databricks/ci-deploy.sh ;;
+          *) echo "Unknown DEPLOY_PLATFORM '${DEPLOY_PLATFORM}' (expected aws or databricks)"; exit 2 ;;
+        esac

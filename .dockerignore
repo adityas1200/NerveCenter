@@ -1,0 +1,17 @@
+.git
+.gitignore
+**/node_modules
+**/dist
+**/coverage
+**/.env
+**/.env.*
+!**/.env.example
+# Tracked, non-secret-by-design defaults the backend image applies at boot.
+!.env.defaults
+**/*.log
+backend/data/workbench
+backend/data/runtime/workspaces
+backend/data/runtime/*.tmp-*
+# Databricks bundle staging; never part of the AWS images.
+deploy/databricks/.stage
+deploy/databricks/.databricks

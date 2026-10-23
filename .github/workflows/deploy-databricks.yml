@@ -1,0 +1,95 @@
+# Deploys NerveCenter to Databricks Apps. It runs deploy/databricks/ci-deploy.sh, the same entry
+# point the AWS CodeBuild path uses (DEPLOY_PLATFORM=databricks), so a deploy from here and a deploy
+# from a laptop do the same thing: build.sh, then `bundle validate`, `bundle deploy`, `bundle run`.
+#
+# Nothing runs until you switch it on: set the repository variable DATABRICKS_DEPLOY_ENABLED=true.
+# Per-environment settings live in GitHub Environments (Settings > Environments), one per bundle
+# target: `dev` and `prod`. Put everything workspace-specific there, never in this file.
+#
+#   Secrets   DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET   service principal OAuth (M2M)
+#             (or DATABRICKS_TOKEN)
+#   Variables DATABRICKS_HOST            https://<workspace-host>
+#             BUNDLE_VOLUME              catalog.schema.volume for the workspace mirror (required)
+#             LAKEBASE_INSTANCE_NAME     Lakebase Provisioned instance; empty for Autoscaling
+#             OPS_ADMIN_USER_IDS         comma-separated emails that are admins from first sign-in
+#             BUNDLE_APP_NAME, BUNDLE_LAKEBASE_INSTANCE, BUNDLE_LAKEBASE_DATABASE,
+#             BUNDLE_SECRET_SCOPE, BUNDLE_COMPUTE_SIZE
+#                                        optional; unset keeps the defaults in databricks.yml
+#             DATABRICKS_CLI_VERSION     optional CLI pin, e.g. 0.260.0
+name: Deploy to Databricks Apps
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Bundle target (and GitHub Environment) to deploy
+        type: choice
+        options: [dev, prod]
+        default: dev
+  push:
+    branches: [feature/nervecenter-ui-changes]
+    paths:
+      - backend/**
+      - frontend/**
+      - plugin/**
+      - deploy/databricks/**
+      - .github/workflows/deploy-databricks.yml
+
+# One deploy per target at a time; a newer push waits instead of cancelling a deploy midway.
+concurrency:
+  group: deploy-databricks-${{ inputs.target || 'dev' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ vars.DATABRICKS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.target || 'dev' }}
+    env:
+      DEPLOY_PLATFORM: databricks
+      DATABRICKS_BUNDLE_TARGET: ${{ inputs.target || 'dev' }}
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      LAKEBASE_INSTANCE_NAME: ${{ vars.LAKEBASE_INSTANCE_NAME }}
+      OPS_ADMIN_USER_IDS: ${{ vars.OPS_ADMIN_USER_IDS }}
+      BUNDLE_VAR_volume: ${{ vars.BUNDLE_VOLUME }}
+      DATABRICKS_CLI_VERSION: ${{ vars.DATABRICKS_CLI_VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # An empty BUNDLE_VAR_x would override the default in databricks.yml with "", so only the
+      # optional bundle variables that are actually set are exported.
+      - name: Export optional bundle variables
+        env:
+          APP_NAME: ${{ vars.BUNDLE_APP_NAME }}
+          LAKEBASE_INSTANCE: ${{ vars.BUNDLE_LAKEBASE_INSTANCE }}
+          LAKEBASE_DATABASE: ${{ vars.BUNDLE_LAKEBASE_DATABASE }}
+          SECRET_SCOPE: ${{ vars.BUNDLE_SECRET_SCOPE }}
+          COMPUTE_SIZE: ${{ vars.BUNDLE_COMPUTE_SIZE }}
+        run: |
+          [ -z "$APP_NAME" ] || echo "BUNDLE_VAR_app_name=$APP_NAME" >> "$GITHUB_ENV"
+          [ -z "$LAKEBASE_INSTANCE" ] || echo "BUNDLE_VAR_lakebase_instance=$LAKEBASE_INSTANCE" >> "$GITHUB_ENV"
+          [ -z "$LAKEBASE_DATABASE" ] || echo "BUNDLE_VAR_lakebase_database=$LAKEBASE_DATABASE" >> "$GITHUB_ENV"
+          [ -z "$SECRET_SCOPE" ] || echo "BUNDLE_VAR_secret_scope=$SECRET_SCOPE" >> "$GITHUB_ENV"
+          [ -z "$COMPUTE_SIZE" ] || echo "BUNDLE_VAR_compute_size=$COMPUTE_SIZE" >> "$GITHUB_ENV"
+
+      - name: Build, validate, deploy and start the app
+        run: bash deploy/databricks/ci-deploy.sh

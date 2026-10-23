@@ -1,0 +1,16 @@
+Status: {{status}}
+
+Completed
+{{completed}}
+
+Verification
+{{verification}}
+
+Deliverables
+{{deliverables}}
+
+Action required
+{{action_required}}
+
+Reference
+{{reference}}

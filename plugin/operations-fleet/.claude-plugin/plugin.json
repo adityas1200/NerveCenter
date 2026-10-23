@@ -1,0 +1,5 @@
+{
+  "name": "operations-fleet",
+  "displayName": "Operations Fleet",
+  "description": "One operations plugin for tickets, monitoring, research, RCA, access, code changes, remediation, verification, documents, communication, knowledge, setup, and reusable workflows."
+}

@@ -1,0 +1,91 @@
+# Declarative Automation Bundle for NerveCenter as a Databricks App.
+#
+#   ./build.sh                       # stage the app into .stage/
+#   databricks bundle deploy -t dev  # create/update the app and bind its resources
+#   databricks bundle run nervecenter -t dev
+#
+# The Lakebase instance, the volume and the secret scope must exist first; see README.md.
+bundle:
+  name: nervecenter
+
+variables:
+  app_name:
+    description: Databricks App name (lowercase letters, digits and dashes)
+    default: nervecenter
+  lakebase_instance:
+    description: Lakebase Provisioned instance name
+    default: nervecenter-db
+  lakebase_database:
+    description: Postgres database inside the instance
+    default: databricks_postgres
+  volume:
+    description: Unity Catalog volume for the workspace mirror, catalog.schema.volume (not used by -t trial)
+    default: ""
+  secret_scope:
+    description: Secret scope holding anthropic-api-key and secret-encryption-key
+    default: nervecenter
+  compute_size:
+    description: MEDIUM or LARGE (agent sessions are memory-hungry; LARGE is recommended)
+    default: LARGE
+
+# .stage/ is generated and git-ignored; include it explicitly so the bundle uploads it.
+sync:
+  include:
+    - .stage/**
+  exclude:
+    - .stage/node_modules/**
+
+resources:
+  apps:
+    nervecenter:
+      name: ${var.app_name}
+      description: NerveCenter data operations agent
+      source_code_path: ./.stage
+      compute_size: ${var.compute_size}
+      resources:
+        - name: database
+          database:
+            instance_name: ${var.lakebase_instance}
+            database_name: ${var.lakebase_database}
+            permission: CAN_CONNECT_AND_CREATE
+        - name: anthropic-api-key
+          secret:
+            scope: ${var.secret_scope}
+            key: anthropic-api-key
+            permission: READ
+        - name: secret-encryption-key
+          secret:
+            scope: ${var.secret_scope}
+            key: secret-encryption-key
+            permission: READ
+
+targets:
+  # dev and prod bind the UC volume (the workspace mirror). The app's service principal needs USE
+  # CATALOG on the volume's catalog, so the deployer must be able to grant it.
+  dev:
+    mode: development
+    default: true
+    resources:
+      apps:
+        nervecenter:
+          resources:
+            - name: workspace-volume
+              uc_securable:
+                securable_type: VOLUME
+                securable_full_name: ${var.volume}
+                permission: WRITE_VOLUME
+  prod:
+    mode: production
+    resources:
+      apps:
+        nervecenter:
+          resources:
+            - name: workspace-volume
+              uc_securable:
+                securable_type: VOLUME
+                securable_full_name: ${var.volume}
+                permission: WRITE_VOLUME
+  # trial: no volume. The workspace lives on local disk and is lost on restart. Build with
+  # NC_NO_VOLUME=1 so app.yaml does not reference the missing resource.
+  trial:
+    mode: development

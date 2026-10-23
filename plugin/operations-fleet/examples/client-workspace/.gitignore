@@ -1,0 +1,6 @@
+.env
+.env.*
+!.env.example
+artifacts/
+runs/
+.knowledge-extract/

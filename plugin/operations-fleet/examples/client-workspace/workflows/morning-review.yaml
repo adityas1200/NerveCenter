@@ -1,0 +1,14 @@
+name: morning-review
+objective: Review assigned work, identify blockers, and investigate the highest-priority operational failure.
+trigger:
+  type: manual
+uses: [jira, databricks, knowledge]
+authority:
+  writes: denied
+success:
+  - actionable ticket queue is complete for the configured view
+  - the selected failure has evidence-backed analysis
+  - no external system was changed
+on_failure:
+  notify: operations_team
+  retry: 0

@@ -1,0 +1,154 @@
+team:
+  name: Data Operations
+  timezone: Asia/Kolkata
+  operator:
+    name: Alex Operator
+    email: alex.operator@example.com
+
+ticketing:
+  platform: jira
+  connection: jira
+  scope:
+    site: example.atlassian.net
+    project: DATAOPS
+    queue: Data Operations
+  views:
+    my_work: >-
+      project = DATAOPS AND assignee = currentUser()
+      AND statusCategory != Done
+      ORDER BY priority DESC, updated ASC
+  fields:
+    category: labels
+    approval: Approver decision
+    environment: Environment
+  states:
+    new: [Open, To Do]
+    active: [In Progress]
+    review: [In Review]
+    done: [Done, Closed]
+  conventions: |
+    Access requests use the Access Request issue type.
+    Labels dq and pipeline identify data-quality and pipeline work.
+    A ticket is closed only after the intended outcome is verified.
+
+platforms:
+  - name: analytics
+    type: databricks
+    connection: databricks
+    environments:
+      dev:
+        workspace: example-dev-workspace
+        writable: true
+      qa:
+        workspace: example-qa-workspace
+        writable: false
+      prod:
+        workspace: example-prod-workspace
+        writable: false
+    monitoring:
+      jobs: system.lakeflow job and task timelines
+      data_quality: operations_monitoring.dq_results
+    conventions: |
+      Dev is the default investigation and test environment.
+      Production changes always require a separate approval.
+
+identity:
+  platform: microsoft-entra
+  connection: microsoft
+  entitlements:
+    databricks-standard-user:
+      target: analytics workspace user
+      classification: ordinary
+      approver: application owner
+    databricks-admin:
+      target: analytics workspace admin
+      classification: privileged
+      approvers: [application owner, security owner]
+  conventions: |
+    Resolve users by employee ID or user principal name.
+    Dynamic groups are changed through their authoritative attributes, not direct membership.
+
+source_control:
+  platform: github
+  connection: github
+  repository: example-org/data-platform
+  default_branch: main
+  branch_pattern: ticket/{ticket}-{slug}
+  tests: [unit tests, integration tests, static checks]
+  pull_request:
+    reviewers: [data-platform-codeowners]
+    required_checks: [unit-tests, integration-tests, security-scan]
+  deployments:
+    dev: deploy-dev.yml
+    qa: promote-qa.yml
+    prod: promote-prod.yml
+
+branding:
+  name: Example Data Operations
+  accent: "#2563EB"
+  font: Segoe UI
+  footer: Example Data Operations, dataops@example.com
+
+documents:
+  connection: microsoft
+  templates:
+    weekly_deck: templates/weekly-operations-deck.pptx
+    weekly_workbook: templates/weekly-ticket-register.xlsx
+  destinations:
+    weekly_operations: Operations/Weekly
+
+communication:
+  platform: microsoft-graph
+  connection: microsoft
+  sender: dataops@example.com
+  internal_domains: [example.com]
+  max_attachment_mb: 10
+  recipient_groups:
+    operations_team: [dataops-team@example.com]
+    weekly_stakeholders: [platform-leads@example.com, business-operations@example.com]
+  conventions: |
+    Keep operational emails concise and factual.
+    External recipients are not allowed without an exception.
+
+knowledge:
+  mode: both
+  path: knowledge
+  connection: knowledge
+  collections: [enterprise, data-operations, databricks, communication]
+  approved_only: true
+
+policy:
+  email_send: ask
+  privileged_access: ask
+  production_changes: ask
+  ticket_writes: ask
+  workspace_changes: ask
+  knowledge_drafts: allow
+  default_write: ask
+
+connections:
+  jira:
+    kind: mcp
+    transport: http
+    url: ${JIRA_MCP_URL}
+  databricks:
+    kind: mcp
+    transport: http
+    url: ${DATABRICKS_MCP_URL}
+  knowledge:
+    kind: mcp
+    transport: http
+    url: ${KNOWLEDGE_MCP_URL}
+  github:
+    kind: cli
+    command: gh
+  microsoft:
+    kind: api
+    provider: microsoft-graph
+    auth: oauth
+
+routines:
+  - name: Morning review
+    outcome: Review assigned tickets, identify blockers, and investigate the highest-priority failure.
+  - name: Weekly report
+    outcome: Reconcile completed work, create the workbook and deck, publish them, and prepare stakeholder communication.

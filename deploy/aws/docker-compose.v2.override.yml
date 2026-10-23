@@ -1,0 +1,10 @@
+# Local-only override for running this checkout as a second, side-by-side
+# stack (project "nervecenter2") without colliding with the existing
+# nervecenter-frontend/nervecenter-backend containers from the other repo
+# checkout. Not part of the deploy pipeline — used only via the -f flag.
+services:
+  frontend:
+    container_name: nervecenter2-frontend
+
+  backend:
+    container_name: nervecenter2-backend

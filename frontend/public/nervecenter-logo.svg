@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">NerveCenter</title>
+  <desc id="desc">NerveCenter mark: a blue-to-violet loop with a sky-blue folded ribbon.</desc>
+  <defs>
+    <linearGradient id="ring" x1="8%" y1="8%" x2="94%" y2="92%">
+      <stop offset="0%" stop-color="#2FA8FF"/>
+      <stop offset="42%" stop-color="#2563EB"/>
+      <stop offset="72%" stop-color="#3D42E8"/>
+      <stop offset="100%" stop-color="#5A2DD8"/>
+    </linearGradient>
+    <linearGradient id="ringSheen" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.24"/>
+      <stop offset="46%" stop-color="#FFFFFF" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="8%" y1="8%" x2="92%" y2="92%">
+      <stop offset="0%" stop-color="#BFE4FF"/>
+      <stop offset="52%" stop-color="#8CC8FF"/>
+      <stop offset="100%" stop-color="#5B9DF7"/>
+    </linearGradient>
+    <linearGradient id="foldSheen" x1="12%" y1="4%" x2="90%" y2="94%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#1F55D8" stop-opacity="0.12"/>
+    </linearGradient>
+    <filter id="softShadow" x="-24%" y="-24%" width="148%" height="158%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#172554" flood-opacity="0.16"/>
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#172554" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <path d="M292 684
+             C247 588 254 474 309 382
+             C365 287 462 229 573 226
+             C695 223 804 286 862 389
+             C918 488 915 609 855 707
+             C795 805 688 863 573 861
+             C476 859 387 819 326 748"
+          fill="none"
+          stroke="url(#ring)"
+          stroke-width="132"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+
+    <path d="M304 648
+             C274 566 284 471 331 391
+             C385 301 480 249 583 250
+             C684 251 777 301 833 386"
+          fill="none"
+          stroke="url(#ringSheen)"
+          stroke-width="34"
+          stroke-linecap="round"/>
+
+    <path d="M286 733
+             L388 632
+             C408 612 440 611 461 631
+             L571 741
+             C592 762 626 765 651 748
+             C598 808 520 842 438 838
+             C375 835 317 813 275 773
+             C260 759 265 748 286 733 Z"
+          fill="url(#fold)"
+          stroke="#4E83E6"
+          stroke-width="3"
+          stroke-opacity="0.28"/>
+
+    <path d="M293 724
+             L393 626
+             C410 609 436 609 454 626
+             L559 731
+             C577 749 599 756 620 755
+             C574 784 517 798 461 795
+             C394 792 335 769 293 724 Z"
+          fill="url(#foldSheen)"/>
+
+    <path d="M571 741
+             C592 762 626 765 651 748
+             C690 722 724 691 751 653
+             C724 714 671 768 607 796
+             C601 779 588 757 571 741 Z"
+          fill="#223FD6"
+          opacity="0.15"/>
+  </g>
+</svg>

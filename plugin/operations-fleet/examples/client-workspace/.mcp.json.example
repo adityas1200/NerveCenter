@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "databricks": {
+      "type": "http",
+      "url": "${DATABRICKS_MCP_URL}"
+    },
+    "jira": {
+      "type": "http",
+      "url": "${JIRA_MCP_URL}"
+    },
+    "knowledge": {
+      "type": "http",
+      "url": "${KNOWLEDGE_MCP_URL}"
+    }
+  }
+}

@@ -1,0 +1,148 @@
+# Example workspace/operations.yaml after connecting Jira (Atlassian), ServiceNow and Databricks
+# through the Connectors page. The UI and the plugin's setup skill both write this file.
+# No secrets live here: every credential is a ${VAR} reference resolved from the secret store
+# when a session starts.
+
+team:
+  name: Data Operations
+  timezone: Asia/Kolkata
+  operator:
+    name: Mitesh Shinde
+    email: mitesh.shinde@zs.com
+
+# Two ticket sources. The Tickets page merges them and shows a Source column.
+ticketing:
+  sources:
+    - platform: jira
+      connection: atlassian
+      scope:
+        site: zs.atlassian.net
+        project: DATAOPS
+      views:
+        my_work: >-
+          project = DATAOPS AND assignee = currentUser()
+          AND statusCategory != Done ORDER BY priority DESC, updated ASC
+        task_scope: >-
+          project = DATAOPS AND statusCategory != Done
+          AND labels in (pipeline, dq, access)
+      fields: { category: labels, environment: Environment }
+      states: { new: [To Do], active: [In Progress], review: [In Review], done: [Done] }
+      auto_task: { enabled: true, max_concurrent: 3, mode: read-only }
+    - platform: servicenow
+      connection: servicenow
+      scope:
+        instance: zsdev.service-now.com
+        table: incident
+        query: category IN (Data Platform, Data Quality, Access) AND state != Closed
+      fields: { category: category, priority: priority }
+      states: { new: [New], active: [In Progress], review: [On Hold], done: [Resolved, Closed] }
+      auto_task: { enabled: true, max_concurrent: 3, mode: read-only }
+  conventions: |
+    Access requests use the Access Request issue type in Jira and category Access in ServiceNow.
+    Labels dq and pipeline identify data-quality and pipeline work.
+    A ticket is closed only after the intended outcome is verified.
+
+platforms:
+  - name: analytics
+    type: databricks
+    connection: databricks
+    environments:
+      dev:  { workspace: dbc-53777615-550b, writable: true }
+      prod: { workspace: dbc-91aa2c0f-prod, writable: false }
+    monitoring:
+      jobs: system.lakeflow.job_run_timeline        # feeds the Pipelines page
+      data_quality: operations_monitoring.dq_results # feeds the Data Quality page
+    conventions: |
+      Dev is the default investigation and test environment.
+      Production repairs always require a separate approval.
+
+source_control:
+  platform: bitbucket
+  connection: atlassian
+  repository: zs_businesstech/data-platform
+  default_branch: main
+  branch_pattern: ticket/{ticket}-{slug}
+  tests: [unit tests, dq contract tests]
+  pull_request:
+    reviewers: [data-platform-codeowners]
+
+# Optional per-project cadence when source_control.platform is github.
+# Without it, GitHub follows sync.intervalValue/intervalUnit, then OPS_GITHUB_SYNC_SECONDS.
+# sync:
+#   enabled: true
+#   github: { every: 5, unit: minutes }
+#   knowledge: { every: 15, unit: minutes }
+
+# Knowledge bases from the Knowledge page. Git sources are cloned under knowledge/<name>.
+knowledge:
+  approved_only: true
+  bases:
+    - name: data-ops-runbooks
+      kind: git
+      path: knowledge/data-ops-runbooks
+      repo: https://bitbucket.org/zs_businesstech/dataops-runbooks.git
+      branch: main
+      token: ${BITBUCKET_TOKEN}
+      sync: hourly
+    - name: commercial-definitions
+      kind: git
+      path: knowledge/commercial-definitions
+      repo: https://bitbucket.org/zs_businesstech/commercial-definitions.git
+      branch: main
+      token: ${BITBUCKET_TOKEN}
+      sync: daily
+    - name: enterprise-knowledge
+      kind: mcp
+      connection: knowledge
+
+# Simple authority boundaries. "ask" creates an Inbox approval and pauses the session.
+policy:
+  default_write: ask
+  production_changes: ask
+  privileged_access: ask
+  ticket_close: verified-only
+  email_send: ask
+  external_recipients: deny
+
+# Tested data fixes (SPEC-tasks-13): the schema where Sonic copies a table (shallow clone / zero-copy clone),
+# changes and tests the copy, and NerveCenter previews the board widgets on it. Sonic may write only here
+# without asking; applying the tested statement to the real table is a production change. Leave a
+# platform out to turn tested fixes off there.
+fixes:
+  sandbox:
+    databricks: commercial.nc_fix_sandbox
+    snowflake: COMMERCIAL_DB.NC_FIX_SANDBOX
+
+# How the agent reaches each system. Rendered into .mcp.json for the SDK session.
+connections:
+  atlassian:
+    kind: mcp
+    transport: http
+    url: https://mcp.atlassian.com/v1/mcp
+    oauth: { account: mitesh.shinde@zs.com }
+  servicenow:
+    kind: mcp
+    transport: stdio
+    command: npx
+    args: [-y, "@servicenow/mcp"]
+    env:
+      SERVICENOW_INSTANCE: zsdev.service-now.com
+      SERVICENOW_USERNAME: ${SERVICENOW_USERNAME}
+      SERVICENOW_PASSWORD: ${SERVICENOW_PASSWORD}
+  databricks:
+    kind: mcp
+    transport: http
+    url: ${DATABRICKS_MCP_URL}
+    headers: { Authorization: "Bearer ${DATABRICKS_TOKEN}" }
+  knowledge:
+    kind: mcp
+    transport: http
+    url: https://knowledge.zs.internal/mcp
+    headers: { Authorization: "Bearer ${KNOWLEDGE_TOKEN}" }
+
+# Human descriptions only. Real routines live in workflows/<name>.yaml with a schedule.
+routines:
+  - name: Daily ticket review
+    outcome: Review assigned tickets, group by type, flag blockers and SLA risk, say what to start next.
+  - name: Check failed pipelines
+    outcome: Every two hours, list failed or late runs and link them to tickets.

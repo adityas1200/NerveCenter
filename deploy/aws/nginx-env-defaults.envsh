@@ -1,0 +1,24 @@
+#!/bin/sh
+# Sourced (*.envsh) by the nginx image's entrypoint before 20-envsubst-on-templates.sh renders
+# nginx.conf. Fills variables the container was not given from the repo's tracked .env.defaults,
+# the same rule the backend applies (backend/src/env-defaults.mjs): a k8s Deployment that sets no
+# PUBLIC_BASE_PATH still serves at dev's path. Anything the platform set wins, even a blank.
+# Sourced, not run: it must not exit, and it cleans up its own variables.
+nc_defaults_file=/etc/nginx/nervecenter.env.defaults
+if [ -r "$nc_defaults_file" ]; then
+  while IFS= read -r nc_line || [ -n "$nc_line" ]; do
+    nc_line=$(printf '%s' "$nc_line" | sed 's/\r$//;s/^[[:space:]]*//')
+    case "$nc_line" in ""|\#*) continue ;; esac
+    nc_key=$(printf '%s' "${nc_line%%=*}" | sed 's/[[:space:]]*$//')
+    case "$nc_key" in ""|[0-9]*|*[!A-Za-z0-9_]*) continue ;; esac
+    eval "nc_set=\${$nc_key+x}"
+    [ -n "$nc_set" ] && continue
+    nc_value=$(printf '%s' "${nc_line#*=}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    case "$nc_value" in
+      \"*\") nc_value=${nc_value#\"}; nc_value=${nc_value%\"} ;;
+      \'*\') nc_value=${nc_value#\'}; nc_value=${nc_value%\'} ;;
+    esac
+    export "$nc_key=$nc_value"
+  done < "$nc_defaults_file"
+fi
+unset nc_defaults_file nc_line nc_key nc_set nc_value

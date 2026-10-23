@@ -1,0 +1,157 @@
+name: nervecenter
+
+services:
+  frontend:
+    build:
+      context: ../..
+      dockerfile: deploy/aws/Dockerfile
+      target: frontend
+      args:
+        VITE_APP_BASE: ${PUBLIC_BASE_PATH:-/apps/nervecenter}
+        VITE_API_BASE_URL: ${PUBLIC_BASE_PATH:-/apps/nervecenter}
+        VITE_AUTO_REFRESH_SECONDS: ${VITE_AUTO_REFRESH_SECONDS:-300}
+        VITE_AZURE_SSO_ENABLED: ${VITE_AZURE_SSO_ENABLED:-true}
+        VITE_AUTH_ENABLED: ${VITE_AUTH_ENABLED:-true}
+        VITE_AUTH_API_BASE_URL: ${VITE_AUTH_API_BASE_URL:-/dataverse/apps/api/v1}
+    container_name: nervecenter-frontend
+    ports:
+      - "${FRONTEND_PORT:-8420}:${NGINX_LISTEN_PORT:-80}"
+    environment:
+      PUBLIC_BASE_PATH: ${PUBLIC_BASE_PATH:-/apps/nervecenter}
+      NGINX_LISTEN_PORT: ${NGINX_LISTEN_PORT:-80}
+      # nginx upstream host:port; compose uses the service name, k8s overrides to the Service DNS name.
+      BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-backend:8787}
+      OPS_TRUSTED_IDENTITY_TOKEN: ${OPS_TRUSTED_IDENTITY_TOKEN:?OPS_TRUSTED_IDENTITY_TOKEN is required}
+      OPS_DEFAULT_USER_ID: ${OPS_DEFAULT_USER_ID:-demo.user}
+      OPS_DEFAULT_USER_NAME: ${OPS_DEFAULT_USER_NAME:-Demo User}
+      NGINX_ENVSUBST_FILTER: ^(PUBLIC_BASE_PATH|NGINX_LISTEN_PORT|BACKEND_UPSTREAM|OPS_TRUSTED_IDENTITY_TOKEN|OPS_DEFAULT_USER_ID|OPS_DEFAULT_USER_NAME)$
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # One process: API, agent sessions (Claude Agent SDK + the operations-fleet plugin), the ticket
+  # poller and the routine scheduler. Tickets, tasks and inbox live in Postgres; the agent
+  # workspace lives on the volume and is mirrored to S3 (restored on boot, pushed every minute).
+  backend:
+    build:
+      context: ../..
+      dockerfile: deploy/aws/Dockerfile
+      target: backend
+    container_name: nervecenter-backend
+    ports:
+      - "${BACKEND_PORT:-8421}:8787"
+    # Load repo defaults first, then host deploy/aws/.env overrides. Matches
+    # ai_for_data / ai4dm so AWS_REGION, APP_ENV, and AWS_SECRET_* always
+    # reach the container even when the deploy shell drops them. ../.env is the
+    # pre-deploy/aws location, still read so hosts not yet migrated keep their settings.
+    env_file:
+      - path: ../../.env.defaults
+        required: false
+      - path: ../.env
+        required: false
+      - path: ./.env
+        required: false
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8787
+      # Identity
+      OPS_IDENTITY_MODE: ${OPS_IDENTITY_MODE:-central-sso}
+      OPS_TRUSTED_IDENTITY_TOKEN: ${OPS_TRUSTED_IDENTITY_TOKEN:?OPS_TRUSTED_IDENTITY_TOKEN is required}
+      OPS_SSO_SESSION_URL: ${OPS_SSO_SESSION_URL:-}
+      OPS_INTERNAL_SERVICE_TOKEN: ${OPS_INTERNAL_SERVICE_TOKEN:-${OPS_TRUSTED_IDENTITY_TOKEN}}
+      OPS_DEFAULT_USER_ID: ${OPS_DEFAULT_USER_ID:-demo.user}
+      OPS_DEFAULT_USER_NAME: ${OPS_DEFAULT_USER_NAME:-Demo User}
+      OPS_ADMIN_USER_IDS: ${OPS_ADMIN_USER_IDS:-}
+      OPS_ADMIN_LIST_FILE: /var/lib/nervecenter/runtime/admins.json
+      OPS_RBAC_USERS_FILE: /var/lib/nervecenter/runtime/rbac-users.json
+      OPS_PUBLIC_URL: ${OPS_PUBLIC_URL:-}
+      OPS_CORS_ORIGIN: ${OPS_CORS_ORIGIN:-http://localhost}
+      # Agent
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-${NC_ANTHROPIC_API_KEY:-}}
+      OPS_AGENT_MODEL: ${OPS_AGENT_MODEL:-}
+      OPS_MAX_CONCURRENT_TASKS: ${OPS_MAX_CONCURRENT_TASKS:-3}
+      OPS_MAX_TURNS_PER_RUN: ${OPS_MAX_TURNS_PER_RUN:-}
+      OPS_TICKET_POLLING: ${OPS_TICKET_POLLING:-1}
+      OPS_TICKET_POLL_SECONDS: ${OPS_TICKET_POLL_SECONDS:-15}
+      OPS_INTEGRATION_SYNC: ${OPS_INTEGRATION_SYNC:-1}
+      OPS_INTEGRATION_SYNC_SECONDS: ${OPS_INTEGRATION_SYNC_SECONDS:-15}
+      OPS_KNOWLEDGE_SYNC_SECONDS: ${OPS_KNOWLEDGE_SYNC_SECONDS:-15}
+      OPS_GITHUB_SYNC_SECONDS: ${OPS_GITHUB_SYNC_SECONDS:-15}
+      OPS_SYNC_IDLE_SECONDS: ${OPS_SYNC_IDLE_SECONDS:-90}
+      OPS_ROUTINES: ${OPS_ROUTINES:-1}
+      OPS_RECOVER_ON_BOOT: ${OPS_RECOVER_ON_BOOT:-1}
+      OPS_TICKET_PREFIX: ${OPS_TICKET_PREFIX:-OPS}
+      # Workspace and plugin (paths baked into the image; the workspace is a volume)
+      OPS_RUNTIME_DIR: /var/lib/nervecenter/runtime
+      OPS_WORKSPACE_DIR: /var/lib/nervecenter/workspace
+      OPS_PLUGIN_DIR: /app/plugin/operations-fleet
+      OPS_WORKSPACE_SYNC_SECONDS: ${OPS_WORKSPACE_SYNC_SECONDS:-60}
+      # Storage: Postgres for tickets, tasks and inbox; S3 for the workspace; AWS Secrets Manager for credentials
+      OPS_METADATA_STORE: ${OPS_METADATA_STORE:-postgres}
+      DATABASE_URL: ${DATABASE_URL:-${NC_DATABASE_URL:-}}
+      NC_DB_SCHEMA: ${NC_DB_SCHEMA:-}
+      OPS_PG_POOL_MAX: ${OPS_PG_POOL_MAX:-20}
+      OPS_PG_SSL: ${OPS_PG_SSL:-}
+      OPS_SECRET_STORE: aws
+      OPS_SECRET_PREFIX: ${OPS_SECRET_PREFIX:-}
+      OPS_S3_BUCKET: ${OPS_S3_BUCKET:-}
+      OPS_S3_PREFIX: ${OPS_S3_PREFIX:-}
+      AWS_REGION: ${AWS_REGION:-${AWS_DEFAULT_REGION:-us-east-1}}
+      # Deployment-level platform credentials (optional; Connectors in the app is the normal path)
+      DATABRICKS_HOST: ${DATABRICKS_HOST:-}
+      DATABRICKS_TOKEN: ${DATABRICKS_TOKEN:-}
+      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT:-}
+      SNOWFLAKE_USER: ${SNOWFLAKE_USER:-}
+      SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD:-}
+      SNOWFLAKE_PRIVATE_KEY: ${SNOWFLAKE_PRIVATE_KEY:-}
+      SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${SNOWFLAKE_PRIVATE_KEY_PASSPHRASE:-}
+      SNOWFLAKE_TOKEN: ${SNOWFLAKE_TOKEN:-}
+      SNOWFLAKE_TOKEN_TYPE: ${SNOWFLAKE_TOKEN_TYPE:-PROGRAMMATIC_ACCESS_TOKEN}
+      SNOWFLAKE_WAREHOUSE: ${SNOWFLAKE_WAREHOUSE:-}
+      SNOWFLAKE_DATABASE: ${SNOWFLAKE_DATABASE:-}
+      SNOWFLAKE_SCHEMA: ${SNOWFLAKE_SCHEMA:-}
+      SNOWFLAKE_ROLE: ${SNOWFLAKE_ROLE:-}
+      SERVICENOW_INSTANCE: ${SERVICENOW_INSTANCE:-}
+      SERVICENOW_USERNAME: ${SERVICENOW_USERNAME:-}
+      SERVICENOW_PASSWORD: ${SERVICENOW_PASSWORD:-}
+      OPS_SERVICENOW_SECRET_REF: ${OPS_SERVICENOW_SECRET_REF:-integrations/servicenow/credential}
+      OPS_DATA_PLATFORM_PROVIDER: ${OPS_DATA_PLATFORM_PROVIDER:-}
+      # AWS credential chain pass-through (IRSA + static + container creds).
+      # Mirrors ai4dm/agentic-beacon-suite so the AWS SDK v3 default provider
+      # chain can resolve credentials for Secrets Manager hydration and S3.
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-${AWS_REGION:-us-east-1}}
+      AWS_STS_REGIONAL_ENDPOINTS: ${AWS_STS_REGIONAL_ENDPOINTS:-regional}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      AWS_PROFILE: ${AWS_PROFILE:-}
+      AWS_ROLE_ARN: ${AWS_ROLE_ARN:-${irsa_iam_role_arn:-}}
+      irsa_iam_role_arn: ${irsa_iam_role_arn:-}
+      AWS_WEB_IDENTITY_TOKEN_FILE: ${AWS_WEB_IDENTITY_TOKEN_FILE:-/var/run/secrets/eks.amazonaws.com/serviceaccount/token}
+      AWS_CONTAINER_CREDENTIALS_RELATIVE_URI: ${AWS_CONTAINER_CREDENTIALS_RELATIVE_URI:-}
+      AWS_CONTAINER_CREDENTIALS_FULL_URI: ${AWS_CONTAINER_CREDENTIALS_FULL_URI:-}
+      AWS_CONTAINER_AUTHORIZATION_TOKEN: ${AWS_CONTAINER_AUTHORIZATION_TOKEN:-}
+      AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE: ${AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE:-}
+      AWS_SHARED_CREDENTIALS_FILE: ${AWS_SHARED_CREDENTIALS_FILE:-}
+      AWS_CONFIG_FILE: ${AWS_CONFIG_FILE:-}
+      AWS_SDK_LOAD_CONFIG: ${AWS_SDK_LOAD_CONFIG:-}
+      # Runtime hydrator inputs (read by src/runtime-env.mjs at boot).
+      APP_ENV: ${APP_ENV:-}
+      BEACON_ENV: ${BEACON_ENV:-}
+      NC_ENVIRONMENT: ${NC_ENVIRONMENT:-}
+      USE_AWS_SECRETS: ${USE_AWS_SECRETS:-auto}
+      # Leave blank so the connector secret-store fallback chain (secret-store.mjs) is unchanged; hydrator defaults this internally to 'beacon'.
+      AWS_SECRET_PREFIX: ${AWS_SECRET_PREFIX:-}
+      AWS_SECRET_GROUPS: ${AWS_SECRET_GROUPS:-nervecenter,common}
+    volumes:
+      - nervecenter-runtime:/var/lib/nervecenter/runtime
+      - nervecenter-workspace:/var/lib/nervecenter/workspace
+      - nervecenter-uv:/var/lib/nervecenter/uv-cache
+    restart: unless-stopped
+
+volumes:
+  nervecenter-runtime:
+  nervecenter-workspace:
+  nervecenter-uv:

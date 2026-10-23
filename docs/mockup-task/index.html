@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NerveCenter · Task mock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;650;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="side" aria-label="Navigation">
+      <div class="brand"><span class="logo" aria-hidden="true"></span>NerveCenter</div>
+      <a class="back-proj" href="#">‹ Projects</a>
+      <div class="proj"><span class="proj-dot"></span>PILOT</div>
+      <button class="new-task" type="button">New task <kbd>C</kbd></button>
+      <nav>
+        <p class="nav-h">Operations</p>
+        <a>Overview</a><a>Tickets</a><a>Pipelines</a><a>Data quality</a><a>Boards</a>
+        <a class="on">Tasks</a><a>Inbox <span class="badge">1</span></a>
+        <p class="nav-h">Automation</p>
+        <a>Routines</a><a>Skills</a><a>Knowledge</a>
+        <p class="nav-h">Platform</p>
+        <a>Connectors</a><a>Settings</a>
+      </nav>
+      <div class="me"><span class="av">MS</span><div><b>Mitesh Shinde</b><small>mitesh.shinde@helixa.example</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="top">
+        <a class="crumb" href="#">‹ Tasks</a>
+        <h1 id="title">Veltrix daily sales load failed — IQVIA file schema change</h1>
+        <span id="status-pill" class="pill pill-done">Done</span>
+        <span class="top-gap"></span>
+        <button class="ghost" type="button" id="open-details">Details</button>
+        <button class="ghost icon" type="button" aria-label="More">⋯</button>
+      </header>
+
+      <!-- One line that answers "where are we?" — replaces the Result tab and the phase strip. -->
+      <div class="outcome" id="outcome"></div>
+
+      <div class="scroll" id="scroll">
+        <div class="thread" id="thread"></div>
+      </div>
+
+      <div class="composer-wrap">
+        <div class="suggest" id="suggest"></div>
+        <div class="composer">
+          <textarea id="composer-input" rows="1" placeholder="Ask a follow-up…"></textarea>
+          <div class="composer-row">
+            <button type="button" class="perm">Ask first ▾</button>
+            <span class="composer-status" id="composer-status"></span>
+            <button type="button" class="send" id="send" aria-label="Send">↑</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="sheet-scrim" id="scrim" hidden></div>
+  <aside class="sheet" id="sheet" aria-label="Task details" hidden></aside>
+
+  <nav class="dock" aria-label="Mock controls">
+    <span class="tagm">Mock</span>
+    <button type="button" id="replay">Replay live</button>
+    <button type="button" id="reset">Finished task</button>
+    <button type="button" id="theme">Dark</button>
+  </nav>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

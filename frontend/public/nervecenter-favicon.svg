@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="172 135 820 820" role="img" aria-labelledby="title">
+  <title id="title">NerveCenter</title>
+  <defs>
+    <linearGradient id="ring" x1="8%" y1="8%" x2="94%" y2="92%">
+      <stop offset="0%" stop-color="#2FA8FF"/>
+      <stop offset="42%" stop-color="#2563EB"/>
+      <stop offset="72%" stop-color="#3D42E8"/>
+      <stop offset="100%" stop-color="#5A2DD8"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="8%" y1="8%" x2="92%" y2="92%">
+      <stop offset="0%" stop-color="#BFE4FF"/>
+      <stop offset="52%" stop-color="#8CC8FF"/>
+      <stop offset="100%" stop-color="#5B9DF7"/>
+    </linearGradient>
+  </defs>
+  <path d="M292 684
+           C247 588 254 474 309 382
+           C365 287 462 229 573 226
+           C695 223 804 286 862 389
+           C918 488 915 609 855 707
+           C795 805 688 863 573 861
+           C476 859 387 819 326 748"
+        fill="none"
+        stroke="url(#ring)"
+        stroke-width="132"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  <path d="M286 733
+           L388 632
+           C408 612 440 611 461 631
+           L571 741
+           C592 762 626 765 651 748
+           C598 808 520 842 438 838
+           C375 835 317 813 275 773
+           C260 759 265 748 286 733 Z"
+        fill="url(#fold)"/>
+  <path d="M571 741
+           C592 762 626 765 651 748
+           C690 722 724 691 751 653
+           C724 714 671 768 607 796
+           C601 779 588 757 571 741 Z"
+        fill="#223FD6"
+        opacity="0.15"/>
+</svg>

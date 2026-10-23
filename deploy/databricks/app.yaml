@@ -1,0 +1,61 @@
+# Databricks Apps runtime configuration. build.sh copies this file into the staged app (.stage/),
+# next to package.json; the platform runs `npm install` and `pip install -r requirements.txt`, then
+# `command`. Resource keys in `valueFrom` are the ones declared in databricks.yml.
+command: ["node", "dist/main.mjs"]
+
+env:
+  - name: NODE_ENV
+    value: production
+  - name: OPS_PLATFORM
+    value: databricks
+  - name: USE_AWS_SECRETS
+    value: "false"
+
+  # Local disk is scratch space: the workspace is restored from the volume at boot and pushed back
+  # every OPS_WORKSPACE_SYNC_SECONDS; tickets, tasks and secrets live in Lakebase.
+  - name: OPS_FRONTEND_DIR
+    value: web
+  - name: OPS_PLUGIN_DIR
+    value: plugin/operations-fleet
+  - name: OPS_RUNTIME_DIR
+    value: /tmp/nervecenter/runtime
+  - name: OPS_WORKSPACE_DIR
+    value: /tmp/nervecenter/workspace
+  - name: UV_CACHE_DIR
+    value: /tmp/nervecenter/uv-cache
+  - name: UV_PYTHON_INSTALL_DIR
+    value: /tmp/nervecenter/uv-python
+  - name: MPLCONFIGDIR
+    value: /tmp/matplotlib
+  - name: OPS_WORKSPACE_SYNC_SECONDS
+    value: "60"
+
+  # Lakebase. The `database` resource injects PGHOST, PGPORT, PGDATABASE and PGUSER; the password is
+  # a short-lived OAuth token the backend mints per connection. Set LAKEBASE_INSTANCE_NAME for a
+  # Lakebase Provisioned instance (tokens are then scoped to it); leave it empty for Autoscaling.
+  - name: NC_DB_SCHEMA
+    value: nervecenter
+  - name: OPS_METADATA_STORE
+    value: postgres
+  - name: LAKEBASE_INSTANCE_NAME
+    value: "nervecenter-db"
+
+  # Unity Catalog volume for the workspace mirror (resolves to catalog.schema.volume).
+  - name: OPS_VOLUME_PATH
+    valueFrom: workspace-volume
+  - name: NC_S3_PREFIX
+    value: nervecenter
+
+  # Connector credentials saved in the UI are encrypted into Lakebase with this key.
+  - name: OPS_SECRET_STORE
+    value: postgres
+  - name: OPS_SECRET_ENCRYPTION_KEY
+    valueFrom: secret-encryption-key
+  - name: ANTHROPIC_API_KEY
+    valueFrom: anthropic-api-key
+
+  # Comma-separated emails that are admins from their first sign-in.
+  - name: OPS_ADMIN_USER_IDS
+    value: ""
+  - name: OPS_MAX_CONCURRENT_TASKS
+    value: "2"

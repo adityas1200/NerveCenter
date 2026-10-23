@@ -1,0 +1,65 @@
+# Local credentials and environment files. Keep example templates tracked.
+.env
+.env.*
+!.env.example
+!.env.defaults
+backend/.env
+frontend/.env.local
+deploy/.env
+deploy/aws/.env
+# Per-machine launch environments for .claude/launch.json (ports, scratch paths); each developer writes their own.
+.claude/*.env
+**/.databrickscfg
+.databrickscfg
+
+# Local runtime state, the agent workspace, generated artifacts, logs, and caches.
+backend/data/runtime/
+backend/data/config/
+backend/workspace/
+.playwright-mcp/
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+node_modules
+frontend/dist/
+backend/dist/
+frontend/tsconfig.node.tsbuildinfo
+
+# Python bytecode caches (plugin scripts and tests).
+__pycache__/
+*.pyc
+
+# Runtime state from a backend started at the repository root (secret store, profiles)
+/data/runtime/
+# Rendered demo video: too large for git (130 MB); re-render with docs/demo-video/render.mjs
+docs/demo-video/out/
+
+.claude/worktrees/
+
+# Working docs kept on local disks, not in the repo: plans, audits, handovers, decks, demo material, mockups, screenshots.
+docs/PLAN-*.md
+docs/UI_REFRESH_PLAN.md
+docs/design-changes.md
+docs/UI-AUDIT-*.md
+docs/SPIKE-*.md
+docs/HANDOVER-*.md
+docs/BMS-*.md
+docs/demo-video-prompt.md
+docs/sonic-audit/
+docs/architecture/
+docs/demo/
+docs/demo-video/
+docs/samples/
+docs/infra-deck.html
+docs/infra-onepager.html
+docs/blog-nervecenter/
+docs/blog-nervecenter.zip
+docs/mockup-home/screenshots/
+docs/mockup-task/screenshots/
+docs/mockup-tasks/
+docs/mockup-libraries-dev/
+frontend/shots*/
+backend/.local-demo/
+demo-assets/

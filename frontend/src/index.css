@@ -1,0 +1,869 @@
+@import "./styles/palette.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /*
+   * Design tokens. Every colour the app paints with is a channel triple here, so Tailwind's
+   * `bg-ink-1/40`-style opacity works and both themes come from the same names. Neutrals are a
+   * true grey (no blue cast); the brand is one iris accent. Dark mode is a near-black base with
+   * depth from lighter surfaces, not shadows; text is off-white. Status hues live in palette.css.
+   */
+  :root {
+    color-scheme: light;
+    --radius: 0.625rem;
+
+    /* Frame and surfaces, back to front: the app frame and sidebar, the page, cards, then
+       quieter fills inside cards (panel, subtle) and the hover fill. */
+    --c-base: 243 243 245;
+    --c-surface: 250 250 251;
+    --c-raised: 255 255 255;
+    --c-elevated: 255 255 255;
+    --c-panel: 248 248 250;
+    --c-subtle: 243 243 246;
+    --c-hover: 237 237 241;
+    --c-tint: 246 246 252;
+    --c-ink-1: 9 9 11;
+    --c-ink-2: 39 39 42;
+    --c-ink-3: 75 75 84;
+    --c-ink-4: 107 107 117;
+    --c-ink-5: 156 156 166;
+    --c-line: 231 231 235;
+    --c-line-soft: 236 236 240;
+    --c-line-strong: 212 212 218;
+    --c-brand: 91 91 214;
+    --c-brand-hover: 81 81 205;
+    --c-brand-soft: 240 240 254;
+    --c-brand-ink: 87 83 198;
+    --c-on-brand: 255 255 255;
+
+    --shadow-card: 0 1px 2px rgb(9 9 11 / 0.04), 0 1px 1px rgb(9 9 11 / 0.02);
+    --shadow-card-hover: 0 8px 24px -12px rgb(9 9 11 / 0.16), 0 1px 2px rgb(9 9 11 / 0.05);
+    --shadow-pop: 0 16px 48px -16px rgb(9 9 11 / 0.22), 0 2px 6px rgb(9 9 11 / 0.06);
+    --shadow-modal: 0 24px 72px -24px rgb(9 9 11 / 0.32);
+    --chart-grid: 228 228 232;
+    --focus-ring: 91 91 214;
+
+    /* shadcn/ui primitives read these as HSL. */
+    --background: 240 9% 98%;
+    --foreground: 240 10% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 4%;
+    --primary: 240 60% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 10% 96%;
+    --secondary-foreground: 240 5% 30%;
+    --muted: 240 9% 96%;
+    --muted-foreground: 240 5% 44%;
+    --accent: 240 60% 97%;
+    --accent-foreground: 240 10% 10%;
+    --destructive: 350 75% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 8% 91%;
+    --input: 240 8% 89%;
+    --ring: 240 60% 60%;
+
+    /* Older names, kept as full colours for SVG fills and inline styles. */
+    --ops-surface: rgb(var(--c-surface));
+    --ops-surface-raised: rgb(var(--c-raised));
+    --ops-surface-tint: rgb(var(--c-tint));
+    --ops-surface-blue: rgb(var(--c-tint));
+    --ops-surface-panel: rgb(var(--c-panel));
+    --ops-surface-subtle: rgb(var(--c-subtle));
+    --ops-surface-hover: rgb(var(--c-hover));
+    --ops-ink-1: rgb(var(--c-ink-1));
+    --ops-ink-2: rgb(var(--c-ink-2));
+    --ops-ink-3: rgb(var(--c-ink-3));
+    --ops-ink-4: rgb(var(--c-ink-4));
+    --ops-ink-5: rgb(var(--c-ink-5));
+    --ops-line: rgb(var(--c-line));
+    --ops-line-blue: rgb(var(--c-line));
+    --ops-line-soft: rgb(var(--c-line-soft));
+    --ops-line-strong: rgb(var(--c-line-strong));
+    --ops-brand: rgb(var(--c-brand));
+    --ops-brand-hover: rgb(var(--c-brand-hover));
+    --ops-brand-deep: #1E2A4A;
+    --ops-brand-indigo: rgb(var(--c-brand-ink));
+    --ops-brand-violet: #7C3AED;
+    --ops-brand-blue: #2563EB;
+    --ops-brand-cyan: #0891B2;
+    --ops-brand-orange: #EA580C;
+    --ops-brand-dark: #09090B;
+
+    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+    --text-micro: 10.5px;
+    --text-tiny: 11px;
+    --text-caption: 11.5px;
+    --text-meta: 12.5px;
+    --text-control: 13px;
+    --text-control-lg: 13.5px;
+    --text-body-sm: 14px;
+    --text-body: 14.5px;
+    --text-copy: 15px;
+    --text-heading-sm: 15px;
+    --text-heading-md: 16px;
+    --text-dialog-title: 17px;
+    --text-section-title: 20px;
+    --text-page-title: 28px;
+    --text-metric: 30px;
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --c-base: 9 9 11;
+    --c-surface: 14 14 17;
+    --c-raised: 24 24 27;
+    --c-elevated: 44 44 50;
+    --c-panel: 20 20 23;
+    --c-subtle: 31 31 35;
+    --c-hover: 39 39 44;
+    --c-tint: 27 27 36;
+    --c-ink-1: 244 244 246;
+    --c-ink-2: 222 222 227;
+    --c-ink-3: 184 184 192;
+    --c-ink-4: 146 146 156;
+    --c-ink-5: 108 108 118;
+    --c-line: 40 40 45;
+    --c-line-soft: 34 34 39;
+    --c-line-strong: 58 58 65;
+    --c-brand: 120 118 240;
+    --c-brand-hover: 138 136 246;
+    --c-brand-soft: 33 33 62;
+    --c-brand-ink: 177 172 255;
+    --c-on-brand: 255 255 255;
+
+    --shadow-card: 0 0 0 0 transparent;
+    --shadow-card-hover: 0 0 0 1px rgb(255 255 255 / 0.04);
+    --shadow-pop: 0 16px 48px -12px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.04);
+    --shadow-modal: 0 24px 72px -16px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.05);
+    --chart-grid: 44 44 50;
+    --focus-ring: 138 136 246;
+
+    --background: 240 6% 5%;
+    --foreground: 240 6% 96%;
+    --card: 240 6% 10%;
+    --card-foreground: 240 6% 96%;
+    --popover: 240 6% 10%;
+    --popover-foreground: 240 6% 96%;
+    --primary: 241 79% 70%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 6% 13%;
+    --secondary-foreground: 240 5% 78%;
+    --muted: 240 6% 13%;
+    --muted-foreground: 240 5% 62%;
+    --accent: 240 30% 18%;
+    --accent-foreground: 240 6% 96%;
+    --destructive: 350 80% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 6% 17%;
+    --input: 240 6% 20%;
+    --ring: 241 79% 70%;
+    --ops-brand-deep: #2A3354;
+  }
+
+  /* What sits above a full-height page: the 56px top bar, plus the panel's 8px frame and hairline on wide screens. */
+  :root { --shell-chrome: 56px; }
+  @media (min-width: 1024px) { :root { --shell-chrome: 74px; } }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    background: rgb(var(--c-base));
+    color: rgb(var(--c-ink-1));
+    font-family: var(--font-sans);
+    font-size: var(--text-copy);
+    line-height: 1.55;
+    font-optical-sizing: auto;
+    /* Inter: single-storey a, open 6 and 9, a slashed-free zero; figures line up in tables. */
+    font-feature-settings: "cv11", "ss01", "ss03";
+    letter-spacing: 0;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  button,
+  input,
+  textarea,
+  select,
+  table {
+    letter-spacing: 0;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background: rgb(var(--c-brand) / 0.2);
+  }
+
+  *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background-clip: padding-box;
+  }
+
+  *:hover::-webkit-scrollbar-thumb {
+    background: rgb(var(--c-ink-1) / 0.16);
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--c-ink-1) / 0.26);
+    background-clip: padding-box;
+  }
+
+  /* A scroll area whose bar is always shown, with a visible track, for panels where hidden overflow
+     would read as the end of the content (the inline report in a task). */
+  .scroll-visible {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--c-ink-1) / 0.28) rgb(var(--c-ink-1) / 0.05);
+  }
+
+  .scroll-visible::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .scroll-visible::-webkit-scrollbar-track {
+    background: rgb(var(--c-ink-1) / 0.04);
+    border-radius: 8px;
+  }
+
+  .scroll-visible::-webkit-scrollbar-thumb {
+    background: rgb(var(--c-ink-1) / 0.24);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background-clip: padding-box;
+  }
+
+  .scroll-visible::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--c-ink-1) / 0.38);
+    background-clip: padding-box;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(var(--focus-ring) / 0.28);
+  }
+
+  kbd {
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    padding: 1px 5px;
+    background: rgb(var(--c-raised));
+    border: 1px solid rgb(var(--c-line-strong));
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    color: rgb(var(--c-ink-4));
+  }
+
+  .skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 100;
+    transform: translateY(-180%);
+    border-radius: 0.5rem;
+    background: var(--ops-brand-deep);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    font-size: var(--text-control);
+    font-weight: 600;
+    transition: transform 160ms ease;
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  .type-page-title {
+    font-family: var(--font-display);
+    font-size: var(--text-page-title);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.18;
+    letter-spacing: 0;
+  }
+
+  .type-panel-title {
+    font-family: var(--font-display);
+    font-size: var(--text-heading-sm);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+
+  .type-body {
+    font-size: var(--text-body);
+    line-height: 1.6;
+    letter-spacing: 0;
+  }
+
+  .type-meta {
+    font-size: var(--text-meta);
+    line-height: 1.45;
+    letter-spacing: 0;
+  }
+
+  .motion-surface {
+    transition:
+      transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      color 240ms ease;
+  }
+
+  @keyframes stagger-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Mount entrance for tiles and rows; pair with an inline animation-delay for the stagger. */
+  .stagger-in {
+    animation: stagger-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .value-swap {
+    animation: value-swap 160ms ease-out both;
+  }
+
+  /* Charts: columns grow from the baseline once on mount; the line draws itself in. */
+  @keyframes chart-col-grow {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+
+  .chart-col {
+    transform-box: fill-box;
+    transform-origin: bottom;
+    animation: chart-col-grow 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    transition: d 560ms cubic-bezier(0.16, 1, 0.3, 1), opacity 160ms ease;
+  }
+
+  @keyframes chart-line-draw {
+    from { stroke-dashoffset: 1; }
+    to { stroke-dashoffset: 0; }
+  }
+
+  .chart-line {
+    stroke-dasharray: 1;
+    animation: chart-line-draw 720ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+    transition: d 560ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes chart-bar-part {
+    from { flex-basis: 0; width: 0; }
+  }
+
+  .chart-bar-part {
+    animation: chart-bar-part 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Knowledge map: each page point grows in once, its delay staggered by position. */
+  @keyframes map-node-in {
+    from { opacity: 0; transform: scale(0.3); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .map-node {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: map-node-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Eval score rings fill once from empty to their score. */
+  @keyframes score-ring-in {
+    from { stroke-dasharray: 0 100; }
+  }
+
+  .score-ring {
+    animation: score-ring-in 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .chart-dot {
+    animation: value-swap 240ms ease-out 700ms both;
+    transition: cx 560ms cubic-bezier(0.16, 1, 0.3, 1), cy 560ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .segmented-thumb {
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: var(--ops-surface-subtle);
+  }
+
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  .ops-canvas {
+    position: relative;
+    isolation: isolate;
+    background: rgb(var(--c-base));
+  }
+
+  .surface-hover {
+    border: 1px solid var(--ops-line);
+    background: var(--ops-surface-raised);
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      color 180ms ease;
+  }
+
+  .surface-hover:hover,
+  .surface-hover:focus-visible,
+  .surface-hover:focus-within {
+    border-color: var(--ops-line-strong);
+    background: var(--ops-surface-hover);
+    box-shadow: none;
+  }
+
+  .surface-active {
+    border-color: var(--ops-line-strong);
+    background: var(--ops-surface-subtle);
+    box-shadow: none;
+  }
+
+  .shell-card {
+    border: 1px solid var(--ops-line);
+    background: var(--ops-surface-raised);
+    box-shadow: var(--shadow-card);
+    transition:
+      transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      color 180ms ease;
+  }
+
+  .shell-card:not(.shell-card-quiet):hover {
+    border-color: var(--ops-line-strong);
+    background: var(--ops-surface-raised);
+    box-shadow: none;
+  }
+
+  .shell-card-quiet {
+    border: 1px solid var(--ops-line);
+    background: var(--ops-surface-raised);
+    box-shadow: var(--shadow-card);
+  }
+
+  .shell-sidebar {
+    background: rgb(var(--c-base));
+  }
+
+  /* The working area sits on the frame as one panel: the page colour, a hairline edge, a soft
+     radius on the inner corners. Sidebar and panel never share a colour, so nothing needs a rule. */
+  .shell-panel {
+    background: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-line));
+  }
+
+  .shell-topbar {
+    background: rgb(var(--c-surface) / 0.82);
+    border-bottom: 1px solid rgb(var(--c-line));
+    backdrop-filter: saturate(1.4) blur(10px);
+    transition: background-color 200ms ease, border-color 200ms ease;
+  }
+
+  /* Over the top of a page with a large title the bar is part of the page: no fill, no rule. */
+  .shell-topbar[data-flat="true"] {
+    background: rgb(var(--c-surface) / 0);
+    border-bottom-color: transparent;
+    backdrop-filter: none;
+  }
+
+  /* The compact title waits until the large one has scrolled under the bar. */
+  .shell-topbar [data-compact-title] {
+    transition: opacity 180ms ease, transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .shell-topbar[data-condensed="false"] [data-compact-title] {
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+  }
+
+  /* One entrance for every grid and list of cards, tiles or rows: each child rises in 35ms after
+     the one before, the first twelve only. Backwards fill, so nothing lingers once it has landed. */
+  .stagger-children > * {
+    animation: stagger-in 300ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  .stagger-children > :nth-child(2) { animation-delay: 35ms; }
+  .stagger-children > :nth-child(3) { animation-delay: 70ms; }
+  .stagger-children > :nth-child(4) { animation-delay: 105ms; }
+  .stagger-children > :nth-child(5) { animation-delay: 140ms; }
+  .stagger-children > :nth-child(6) { animation-delay: 175ms; }
+  .stagger-children > :nth-child(7) { animation-delay: 210ms; }
+  .stagger-children > :nth-child(8) { animation-delay: 245ms; }
+  .stagger-children > :nth-child(9) { animation-delay: 280ms; }
+  .stagger-children > :nth-child(10) { animation-delay: 315ms; }
+  .stagger-children > :nth-child(11) { animation-delay: 350ms; }
+  .stagger-children > :nth-child(12) { animation-delay: 385ms; }
+  .stagger-children > :nth-child(n + 13) { animation-delay: 420ms; }
+
+  /* A section's page settles in. Backwards fill only, so no transform is left on the wrapper
+     (a lasting transform would trap the page's fixed and sticky children). */
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(6px); }
+  }
+
+  .page-enter {
+    animation: page-enter 260ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  .shell-divider {
+    border-color: var(--ops-line);
+  }
+
+  aside[data-collapsed="true"] .sidebar-rail-item {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    --tw-ring-shadow: 0 0 #0000;
+  }
+
+  aside[data-collapsed="true"] .sidebar-rail-item:hover {
+    background: var(--ops-surface-hover);
+  }
+
+  aside[data-collapsed="true"] .sidebar-rail-item:focus-visible {
+    background: var(--ops-surface-hover);
+    box-shadow: 0 0 0 3px rgb(var(--focus-ring) / 0.3);
+  }
+
+  .text-label {
+    @apply text-[11px] font-bold uppercase tracking-[0.05em] text-ink-5;
+  }
+
+  .gradient-brand {
+    background: rgb(var(--c-brand));
+  }
+
+}
+
+.segmented-thumb { background-color: rgb(var(--c-elevated)); }
+
+[data-theme="dark"] .skeleton-shimmer::after {
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.05), transparent);
+}
+
+[data-theme="dark"] img[data-invert-dark] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Boards: charts and live building. Donut slices grow along their arc (per-slice lengths come in as
+   custom properties), horizontal bars grow from the left, areas fade in under their line, new widgets
+   rise in with a soft brand outline that fades, removed widgets fade out, loading widgets shimmer. */
+@keyframes chart-slice-grow {
+  from { stroke-dasharray: 0 var(--chart-circ); }
+  to { stroke-dasharray: var(--chart-arc) var(--chart-rest); }
+}
+
+.chart-slice {
+  animation: chart-slice-grow 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: opacity 160ms ease, stroke-width 160ms ease;
+}
+
+@keyframes chart-bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.chart-bar {
+  transform-box: fill-box;
+  transform-origin: left;
+  animation: chart-bar-grow 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: d 560ms cubic-bezier(0.16, 1, 0.3, 1), opacity 160ms ease;
+}
+
+@keyframes chart-area-fill {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.chart-area {
+  animation: chart-area-fill 600ms ease-out 240ms both;
+  transition: d 560ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* A board widget whose figures just changed under the same filters: a brand ring and a faint wash
+   that fade out over a second and a half. */
+@keyframes widget-updated {
+  0% { box-shadow: inset 0 0 0 1.5px rgb(var(--c-brand) / 0.7); background-color: rgb(var(--c-brand) / 0.06); }
+  100% { box-shadow: inset 0 0 0 1.5px rgb(var(--c-brand) / 0); background-color: rgb(var(--c-brand) / 0); }
+}
+
+.widget-updated {
+  animation: widget-updated 1600ms cubic-bezier(0.32, 0, 0.67, 0) both;
+}
+
+/* New board figures on the way: a short brand sweep along the filter bar's bottom edge. */
+@keyframes board-progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+.board-progress {
+  background: linear-gradient(90deg, transparent, rgb(var(--c-brand)), transparent);
+  animation: board-progress 900ms ease-in-out infinite;
+}
+
+@keyframes chart-label-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.chart-label {
+  animation: chart-label-in 240ms ease-out 560ms both;
+}
+
+@keyframes board-widget-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes board-widget-fresh {
+  from { box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.55); }
+  to { box-shadow: 0 0 0 2px rgba(99, 102, 241, 0); }
+}
+
+.board-widget-enter {
+  animation:
+    board-widget-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) both,
+    board-widget-fresh 900ms ease-out both;
+}
+
+@keyframes board-widget-leave {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(4px); }
+}
+
+.board-widget-leave {
+  animation: board-widget-leave 260ms ease-in both;
+  pointer-events: none;
+}
+
+/* Dialogs: the backdrop fades in with a soft blur and the panel pops up from slightly below. The
+   independent `scale`/`translate` properties compose with the Tailwind centring transform. */
+@keyframes dialog-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.dialog-overlay {
+  backdrop-filter: blur(3px);
+  animation: dialog-overlay-in 180ms ease-out both;
+}
+
+@keyframes dialog-pop {
+  from { opacity: 0; scale: 0.96; translate: 0 8px; }
+  to { opacity: 1; scale: 1; translate: 0 0; }
+}
+
+.dialog-pop {
+  animation: dialog-pop 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* New task: orbits turn slowly, the glow drifts, the grid fades out toward the edges. */
+@keyframes orbit-turn {
+  to { transform: rotate(360deg); }
+}
+
+.orbit-slow { animation: orbit-turn 70s linear infinite; }
+.orbit-slower { animation: orbit-turn 110s linear infinite reverse; }
+.orbit-slowest { animation: orbit-turn 160s linear infinite; }
+
+@keyframes newtask-drift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(36px, -18px) scale(1.08); }
+}
+
+.newtask-drift-a { animation: newtask-drift 14s ease-in-out infinite alternate; }
+.newtask-drift-b { animation: newtask-drift 17s ease-in-out infinite alternate-reverse; }
+
+.dot-grid-fade {
+  background-image: radial-gradient(circle, rgb(var(--c-ink-1) / 0.09) 1px, transparent 1.2px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 50% 55% at 50% 32%, black 0%, transparent 80%);
+}
+
+/* The New task box: on focus a thin ring of the brand, sky and rose turns slowly around its edge,
+   with a soft halo under it. The ring is a masked border on a wrapper, so the box keeps its own clip. */
+@property --glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes glow-turn {
+  to { --glow-angle: 360deg; }
+}
+
+.composer-glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.composer-glow::before,
+.composer-glow::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: 17px;
+  background: conic-gradient(from var(--glow-angle), rgb(var(--c-brand)), rgb(var(--tw-sky-400)), rgb(var(--tw-rose-400)), rgb(var(--c-brand)));
+  opacity: 0;
+  transition: opacity 300ms ease;
+  animation: glow-turn 6s linear infinite;
+}
+
+.composer-glow::before {
+  padding: 1.5px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+.composer-glow::after {
+  inset: 6px 10px -6px;
+  filter: blur(22px);
+}
+
+.composer-glow:focus-within::before { opacity: 0.9; }
+.composer-glow:focus-within::after { opacity: 0.28; }
+
+/* The queue docked on the message box slides open as the first message joins it. */
+@keyframes queue-enter {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+.queue-enter {
+  animation: queue-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* The command palette opens quicker than a dialog: it is a keystroke away and should feel like one. */
+@keyframes palette-pop {
+  from { opacity: 0; scale: 0.98; translate: 0 -6px; }
+  to { opacity: 1; scale: 1; translate: 0 0; }
+}
+
+.palette-overlay {
+  animation: dialog-overlay-in 140ms ease-out both;
+}
+
+.palette-pop {
+  animation: palette-pop 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes dialog-icon-pop {
+  0% { scale: 0.6; opacity: 0; }
+  60% { scale: 1.08; opacity: 1; }
+  100% { scale: 1; }
+}
+
+.dialog-icon-pop {
+  animation: dialog-icon-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) 80ms both;
+}
+
+/* Board cards: the little preview chart rises in on mount. */
+@keyframes board-bar-rise {
+  from { transform: scaleY(0.15); }
+  to { transform: scaleY(1); }
+}
+
+.board-bar {
+  transform-origin: bottom;
+  animation: board-bar-rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes board-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.board-shimmer {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.1) 0%, rgba(148, 163, 184, 0.22) 50%, rgba(148, 163, 184, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: board-shimmer 1.4s ease-in-out infinite;
+}
+
+/* A row's own tools (Ask Sonic) stay out of the way until the row is pointed at or focused, so a
+   table of twenty rows does not show twenty identical marks. Touch screens keep them visible. */
+@media (hover: hover) {
+  tr .row-reveal { opacity: 0; transition: opacity 150ms ease-out; }
+  tr:hover .row-reveal, tr:focus-within .row-reveal, .row-reveal:focus-visible, .row-reveal[data-state="delayed-open"], .row-reveal[data-state="instant-open"] { opacity: 1; }
+}
